@@ -40,7 +40,7 @@ func (d *DWL) Complete() bool {
 	return true
 }
 
-func (d *DWL) GetProgress() []progress.DownloadProgress {
+func (d *DWL) GetProgress() progress.Progress {
 	if d.loader != nil {
 		return d.loader.GetProgress()
 	}
