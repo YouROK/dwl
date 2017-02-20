@@ -20,11 +20,24 @@ func (p Progress) GetSpeed() (uint64, uint64) {
 }
 
 func (p Progress) GetPercent() int {
+	if len(p) == 0 {
+		return 0
+	}
 	prc := 0
 	for _, dp := range p {
 		prc += dp.GetPercent()
 	}
 	return prc / len(p)
+}
+
+func (p Progress) GetThreads() int {
+	thr := 0
+	for _, dp := range p {
+		if dp.IsLoading {
+			thr++
+		}
+	}
+	return thr
 }
 
 func (p Progress) GetAverageConnTime() time.Duration {
@@ -40,6 +53,9 @@ func (p Progress) GetAverageConnTime() time.Duration {
 }
 
 func (p Progress) Complete() bool {
+	if len(p) == 0 {
+		return false
+	}
 	for _, dp := range p {
 		if !dp.Complete() {
 			return false
