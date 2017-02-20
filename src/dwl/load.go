@@ -31,6 +31,6 @@ func (d *DWL) Stop() {
 	d.loader.Stop()
 }
 
-func (d *DWL) getLoader() *Loader {
+func (d *DWL) getLoader() Loader {
 	return loader.NewLoader()
 }
