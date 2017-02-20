@@ -24,13 +24,13 @@ func NewPart(sets *settings.Settings, file *file.File, From, To, Pos int64) *Par
 	return p
 }
 
-func (p *Part) LoadPart(sets *settings.Settings, getProgress func() []progress.DownloadProgress) error {
-	startTime := time.Now()
+func (p *Part) LoadPart(sets *settings.Settings, getProgress func() progress.Progress) error {
 	if p.IsLoading {
 		return nil
 	}
 	p.IsLoading = true
 	defer func() { p.IsLoading = false }()
+	startTime := time.Now()
 
 	client, err := GetClient(sets, p.Pos)
 	if err != nil {
