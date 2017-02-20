@@ -16,19 +16,41 @@ func main() {
 	sets := settings.NewSettings()
 	//	sets.Url = "ftp://prep.ai.mit.edu/README"
 	//	sets.Url = "http://www.audiocheck.net/download.php?filename=Audio/audiocheck.net_hdchirp_88k_-3dBFS_lin.wav"
-	//	sets.Url = "http://ovh.net/files/1Mio.dat"
-	sets.Threads = 5
+
+	sets.Threads = 10
 	sets.FilePath = "test.file"
 	sets.Config.Set("Timeout", 0)
 	header := settings.NewConfig().Set("Accept", "*/*")
 	sets.Config.Set("Header", header)
 
-	sets.Url = "test://localhost:8090/files/text10.txt"
+	sets.Url = "http://ovh.net/files/10Mio.dat"
+	//	sets.Url = "http://localhost:8090/files/text10.txt"
 	//	sets.Url = "ftp://prep.ai.mit.edu/README"
 	//	sets.Url = "ftp://ftpprd.ncep.noaa.gov/pub/data/nccf/radar/nexrad_level2/KABR/KABR_20170209_025154.bz2"
 	//	sets.Url = "ftp://ftp.uconn.edu/48_hour/info.zip"
 
 	d := dwl.NewDWL(sets)
+	/*{
+		var wa sync.WaitGroup
+		wa.Add(1)
+		go func() {
+			d.Load()
+			wa.Done()
+		}()
+		go func() {
+			for {
+				dp := d.GetProgress()
+				for _, p := range dp {
+					fmt.Println(p)
+				}
+
+				fmt.Println()
+				time.Sleep(time.Second)
+			}
+		}()
+		wa.Wait()
+	}
+	return*/
 
 	ui.Init()
 	defer ui.Close()
@@ -84,11 +106,15 @@ func print(dp []progress.DownloadProgress, url string) {
 	parts := make([]int, 0)
 	var speed uint64 = 0
 	var mspeed uint64 = 0
+	var threads int = 0
 	for _, p := range dp {
 		parts = append(parts, p.GetPercent())
 		s, m := p.GetSpeed()
 		speed += s
 		mspeed += m
+		if p.IsLoading {
+			threads++
+		}
 	}
 	gg := make([]*ui.Gauge, len(parts))
 
@@ -111,11 +137,12 @@ func print(dp []progress.DownloadProgress, url string) {
 	lblSpeed.SetX(4)
 	lblSpeed.SetY(5)
 	lblSpeed.Width = 120
-	lblSpeed.Height = 5
+	lblSpeed.Height = 6
 	lblSpeed.BorderLabel = "Progress"
 	lblSpeed.Text = "Url: " + url
 	lblSpeed.Text += fmt.Sprintf("\nAver Speed: %v/sec", progress.ByteSize(mspeed))
 	lblSpeed.Text += fmt.Sprintf("\nReal Speed: %v/sec", progress.ByteSize(speed))
+	lblSpeed.Text += fmt.Sprintf("\nThreads   : %v", threads)
 	for i, p := range parts {
 		_, s := dp[i].GetSpeed()
 		ct := dp[i].ConnectTime.Seconds()
