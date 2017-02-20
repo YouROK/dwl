@@ -10,7 +10,7 @@ type Loader interface {
 	Load()
 	Stop()
 	Complete() bool
-	GetProgress() []progress.DownloadProgress
+	GetProgress() progress.Progress
 
 	GetError() error
 }
