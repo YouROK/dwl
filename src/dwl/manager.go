@@ -3,6 +3,7 @@ package dwl
 import (
 	"dwl/progress"
 	"dwl/settings"
+	"runtime"
 )
 
 type DWL struct {
@@ -17,6 +18,9 @@ type OnChangeFunc func(int, []progress.DownloadProgress)
 func NewDWL(sets *settings.Settings) *DWL {
 	d := new(DWL)
 	d.sets = sets
+	if d.sets.Threads == -1 {
+		d.sets.Threads = runtime.NumCPU() * 4
+	}
 	return d
 }
 
