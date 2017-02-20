@@ -39,7 +39,7 @@ type jsSave struct {
 	Dp   []progress.DownloadProgress `json:"Progress"`
 }
 
-func (f *File) SaveState(sets *settings.Settings, dp []progress.DownloadProgress) error {
+func (f *File) SaveState(sets *settings.Settings, dp progress.Progress) error {
 	if dp == nil || sets == nil {
 		return nil
 	}
