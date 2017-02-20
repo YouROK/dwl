@@ -3,6 +3,8 @@ package settings
 import (
 	"fmt"
 	"strconv"
+
+	"encoding/json"
 )
 
 type Settings struct {
@@ -21,6 +23,17 @@ func NewSettings() *Settings {
 	s.LoadBufferSize = 65 * 1024
 	s.Config = NewConfig()
 	return s
+}
+
+func FromJson(js string) (*Settings, error) {
+	s := new(Settings)
+	err := json.Unmarshal([]byte(js), s)
+	return s, err
+}
+
+func ToJson(sets *Settings) (string, error) {
+	buf, err := json.MarshalIndent(sets, "", " ")
+	return string(buf), err
 }
 
 type Config map[string]interface{}
