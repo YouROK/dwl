@@ -18,12 +18,13 @@ func NewTestClient(sets *settings.Settings, off int64) *TestClient {
 	t := new(TestClient)
 	t.off = off
 	t.pos = off
-	t.wait = time.Nanosecond * time.Duration(rand.Intn(5)+int(off/1000))
+	rand.Seed(time.Now().UnixNano())
+	t.wait = time.Nanosecond * time.Duration(rand.Intn(15000))
 	return t
 }
 
 func (c *TestClient) Connect() error {
-	//	time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
+	time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 	return nil
 }
 func (c *TestClient) Close() error {
