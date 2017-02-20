@@ -15,6 +15,8 @@ type Loader struct {
 	isLoading bool
 	connTime  time.Duration
 	err       error
+
+	partMut sync.Mutex
 }
 
 func NewLoader() *Loader {
@@ -69,41 +71,21 @@ func (l *Loader) Load() {
 		l.file.Close()
 	}()
 
-	var wg sync.WaitGroup
-	var mut sync.Mutex
-
-	for i := 0; i < l.sets.Threads; i++ {
-		wg.Add(1)
-		go func() {
-			for l.isLoading {
-				mut.Lock()
-				part := l.getPart()
-				mut.Unlock()
-
-				if part == nil {
-					isEnd := true
-					for _, p := range l.parts {
-						if !p.Complete() {
-							isEnd = false
-						}
-					}
-					if isEnd && len(l.parts) > 0 {
-						break
-					}
-					time.Sleep(time.Millisecond * 100)
-					continue
-				}
-				err := part.LoadPart(l.sets, l.GetProgress)
-				if err != nil {
-					l.err = err
-					l.Stop()
-					break
-				}
+	for l.isLoading {
+		for l.isRunLoad() && l.isLoading {
+			go l.loadPart()
+			if l.isEndLoad() {
+				l.isLoading = false
 			}
-			wg.Done()
-		}()
+			time.Sleep(time.Millisecond * 50)
+		}
+
+		if !l.isLoading {
+			break
+		}
+
+		l.WaitForNextLoading()
 	}
-	wg.Wait()
 }
 
 func (l *Loader) Stop() {
@@ -124,11 +106,11 @@ func (l *Loader) Complete() bool {
 	return complete
 }
 
-func (l *Loader) GetProgress() []progress.DownloadProgress {
+func (l *Loader) GetProgress() progress.Progress {
 	if len(l.parts) == 0 {
 		return nil
 	}
-	ret := make([]progress.DownloadProgress, 0)
+	var ret progress.Progress
 	for _, p := range l.parts {
 		ret = append(ret, p.DownloadProgress)
 	}
@@ -137,73 +119,4 @@ func (l *Loader) GetProgress() []progress.DownloadProgress {
 
 func (l *Loader) GetError() error {
 	return l.err
-}
-
-func (l *Loader) getPart() *Part {
-	if len(l.parts) == 0 {
-		p := NewPart(l.sets, l.file, 0, 0, 0)
-		l.parts = append(l.parts, p)
-		return p
-	}
-
-	for _, p := range l.parts {
-		if p.ConnectTime > l.connTime {
-			l.connTime = p.ConnectTime
-		}
-	}
-
-	for _, p := range l.parts {
-		//is not load and not end
-		if !p.IsLoading && !p.Complete() {
-			return p
-		}
-		if p.IsLoading && l.isCut(p.DownloadProgress, l.sets.LoadBufferSize*4) {
-			pn := l.cut(p)
-			return pn
-		}
-
-	}
-	{
-		part := l.findBiggest()
-		//is load and isCut
-		if part != nil && part.IsLoading && l.isCut(part.DownloadProgress, l.sets.LoadBufferSize*4) {
-			pn := l.cut(part)
-			return pn
-		}
-	}
-	return nil
-}
-
-func (l *Loader) cut(p *Part) *Part {
-	sets := *p.settings
-
-	size := p.To - p.Pos
-	end := p.To
-	p.To -= size / 2
-
-	pn := NewPart(&sets, l.file, p.To, end, p.To)
-	l.parts = append(l.parts, pn)
-	return pn
-}
-
-func (l *Loader) findBiggest() *Part {
-	if len(l.parts) == 0 {
-		return nil
-	}
-	max := l.parts[0]
-	for _, p := range l.parts {
-		if p.To-p.Pos > max.To-max.Pos {
-			max = p
-		}
-	}
-	return max
-}
-
-func (l *Loader) isCut(dp progress.DownloadProgress, buff int64) bool {
-	_, speed := dp.GetSpeed()
-	connTime := l.connTime //dp.ConnectTime
-	if speed == 0 {
-		return false
-	}
-	return int64(float64(speed)*connTime.Seconds())+buff < dp.To-dp.Pos
 }
