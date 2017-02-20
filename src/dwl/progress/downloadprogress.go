@@ -44,8 +44,9 @@ func (s *DownloadProgress) MessureSpeed(realc int) {
 	delta := time.Since(s.StartTime).Seconds()
 	if time.Since(s.LastTime).Seconds() > 0.1 {
 		s.LastTime = time.Now()
+		lstSpeed := s.Speed
 		s.Speed = uint64(float64(s.BytesLoaded) / delta)
-		s.MiddleSpeed = (s.MiddleSpeed + s.Speed) / 2
+		s.MiddleSpeed = (s.MiddleSpeed + (s.Speed+lstSpeed)/2) / 2
 	}
 	if time.Since(s.StartTime).Seconds() > 5 {
 		s.StartTime = time.Now()
